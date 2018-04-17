@@ -29,11 +29,12 @@ type Input struct {
 type Tile rune
 
 const (
-	StoneWall Tile = '#'
-	DirtFloor Tile = '.'
-	Door      Tile = '|'
-	Blank     Tile = 0
-	Pending   Tile = -1
+	StoneWall  Tile = '#'
+	DirtFloor  Tile = '.'
+	ClosedDoor Tile = '|'
+	OpenDoor   Tile = '/'
+	Blank      Tile = 0
+	Pending    Tile = -1
 )
 
 type Entity struct {
@@ -85,7 +86,9 @@ func loadLevelFromFile(filename string) *Level {
 			case '#':
 				t = StoneWall
 			case '|':
-				t = Door
+				t = ClosedDoor
+			case '/':
+				t = OpenDoor
 			case '.':
 				t = DirtFloor
 			case 'P':
@@ -123,20 +126,54 @@ func loadLevelFromFile(filename string) *Level {
 
 }
 
+func canWalk(level *Level, x, y int) bool {
+	t := level.Map[y][x]
+	switch t {
+	case StoneWall, ClosedDoor, Blank:
+		return false
+	default:
+		return true
+	}
+}
+
+func checkDoor(level *Level, x, y int) {
+	t := level.Map[y][x]
+	if t == ClosedDoor {
+		level.Map[y][x] = OpenDoor
+	}
+}
+
 func handleInput(level *Level, input *Input) {
+	p := level.Player
 	switch input.Typ {
 	case Up:
-		fmt.Println("Up")
-		level.Player.Y--
+		if canWalk(level, p.X, p.Y-1) {
+			fmt.Println("Up")
+			level.Player.Y--
+		} else {
+			checkDoor(level, p.X, p.Y-1)
+		}
 	case Down:
-		fmt.Println("Down")
-		level.Player.Y++
+		if canWalk(level, p.X, p.Y+1) {
+			fmt.Println("Down")
+			level.Player.Y++
+		} else {
+			checkDoor(level, p.X, p.Y+1)
+		}
 	case Left:
-		fmt.Println("Left")
-		level.Player.X--
+		if canWalk(level, p.X-1, p.Y) {
+			fmt.Println("Left")
+			level.Player.X--
+		} else {
+			checkDoor(level, p.X-1, p.Y)
+		}
 	case Right:
-		fmt.Println("Right")
-		level.Player.X++
+		if canWalk(level, p.X+1, p.Y) {
+			fmt.Println("Right")
+			level.Player.X++
+		} else {
+			checkDoor(level, p.X+1, p.Y)
+		}
 	}
 }
 
